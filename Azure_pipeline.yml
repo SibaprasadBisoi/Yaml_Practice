@@ -1,0 +1,42 @@
+# Pipeline for build, deploy and publish
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - README.md
+pr:
+  branches:
+    exclude:
+      - '*'
+variables:
+- group: MyVariableGroup
+pool:
+  name: myagentpool
+  vmImage: "windows-latest"
+stages:
+- stage: Build
+  jobs:
+  - job: BuildJob
+    steps:
+    - script: echo "Building the application"
+      displayName: "Build Application"
+- stage: Test
+  jobs:
+  - job: Test-job
+    steps:
+    - script: echo "Running Tests"
+      displayName: "Testing Application"
+- stage: Deploy
+  jobs:
+  - job: deploy-application
+    steps:
+    - script: echo "deploying application"
+      displayName: "Deploying Application"
+- stage: Publish
+  jobs:
+  - job: publish-job
+    steps:
+    - script: echo "Publish Application"
+      displayName: "Publish Artifacts"
