@@ -1,0 +1,49 @@
+pipeline {
+  agent any
+  environment {
+     // Set AWS and EKS configuration
+        AWS_REGION = 'us-west-2'
+        AWS_ACCOUNT_ID = '<your-aws-account-id>'
+        EKS_CLUSTER_NAME = '<your-eks-cluster-name>'
+        ECR_REPO_NAME = '<your-ecr-repo-name>'
+        KUBECONFIG = "${JENKINS_HOME}/.kube/config" //
+  }
+
+  stages {
+    stage('checkout') {
+      steps {
+        checkout scm
+      }
+    }
+    stage('Build and push docker image') {
+      steps {
+        script {
+          // Log in to ECR
+                    sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+                    // Build and tag your Docker image
+                    sh "docker build -t ${ECR_REPO_NAME}:latest ."
+                     // Push the Docker image to ECR
+                    sh "docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:latest"
+        }
+      }
+    }
+    stage('Deploy to EKS') {
+      steps {
+        script {
+          // Authenticate with EKS cluster
+                    sh "aws eks --region ${AWS_REGION} update-kubeconfig --name ${EKS_CLUSTER_NAME}"
+
+                    // Deploy your Kubernetes manifests (replace 'kubectl apply' with your deployment command)
+                    sh "kubectl apply -f path/to/your/kubernetes-manifests.yaml"
+                
+        }
+      }
+    }
+    post {
+      success {
+        // cleanup resources and notification and etc.
+      }
+    }
+
+}
